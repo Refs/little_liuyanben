@@ -1,0 +1,4 @@
+# 忽略根目录下（.gitignore文件所在的目录）的node_modules文件夹
+/node_modules/
+# 忽略根目录下（.gitignore文件所在的目录）的typings文件夹
+/typings/
