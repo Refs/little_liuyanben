@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap 101 Template</title>
+
+    <!-- Bootstrap -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="http://cdn.bootcss.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="http://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+  </head>
+  <body>
+    <h1>我的留言本</h1>
+     <div class="container">
+      <div class="row">
+      <form class="form-horizontal col-md-6" role="form">
+
+        <div class="form-group">
+          <label for="xingming" class="col-sm-2 control-label">name</label>
+          <div class="col-sm-10">
+            <input type="text" class="form-control" id="xingming" placeholder="name" name="name">
+          </div>
+        </div>
+
+        <!--<div class="form-group">
+          .form-group {
+            margin-bottom: 15px;
+          }
+          相当于段落标签，就是两个表单元素之间的间距变大了，即增加了margin-bottom
+        -->
+
+        <div class="form-group">
+          <label for="liuyan" class="col-sm-2 control-label">liuyan</label>
+          <div class="col-sm-10">
+            <textarea class="form-control" rows="3" id="liuyan" placeholder="留言" name="liuyan"></textarea>
+          </div>
+        </div>
+
+            
+
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+             <button id="tijiao" type="button" class="btn btn-success">提交</button>
+            <!--从bootstrap中直接粘贴过来的一般都为type="submit"的button 发送只能发送get请求；如果想要发送post请求，就要将type改为button-->
+          </div>
+        </div>
+
+      </form>
+      </div>
+    </div> 
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="/js/jquery-3.1.1.js"></script>
+    <!--此处利用ctrl + shift + H, 引入地址时，一定要叫上后缀，否则浏览器请求不到-->
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="/js/bootstrap.min.js"></script>
+    <script type="text/JavaScript">
+      // var oBtn = document.getElementById("tijiao");
+      // oBtn.onclick = function(){
+      //   alert("123");
+      // } 
+      $("#tijiao").click(function(){
+        $.post("/tijiao",{"name":$("#xingming").val(),"liuyan":$("#liuyan").val()},function(result){
+
+        })
+      })
+    </script>
+  
+  </body>
+</html>
