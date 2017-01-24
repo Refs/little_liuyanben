@@ -4,58 +4,11 @@
 
 两个名词：DAO mongoose
 
-## mongodb DAO层 函数封装
+### V1.0 mongodb数据库 DAO层函数的封装
+主要涉及三个文件：
 
-### 数据库的链接
+* 主入口文件 app.js
+* 封装的函数 ./model/db.js
+* mongodb 链接配置文件 setting.js
 
-> 数据库的CRUD（增删改查）以及其它的操作，都是以先链接数据库为前提，然后再对数据库，进行一系列的操作；所以我们此处，将数据库的链接函数封装成为一个内部函数_connectDB
-```js
-	 //./model/db.js中
-	 var MongoClient = require("mongodb").MongoClient;
 
-	 function _connectDB(callback){
-	     var url = "mongodb://localhost:27017/itcast";
-
-	     MongoClient.connect(url,function(err,db){
-	         if(err){
-	             callback(err,null); 
-	             return;
-	         }
-	         callback(null,db); //数据上传；
-	     })
-	 }
-	//  因为链接数据库之后还要去做其它事情，所以此处函数要有一个接收回调函数的参数callback;
-
-```
-
->其中数据库的连接可以创建一个配置文件来，来配置
-
-```js 
-    //创建配置文件
-    //./seeting.js中
-    model.exports = {
-        "dburl" : "mongodb://localhost:27017/itcast"
-    }
-    //利用model.exports的暴露方式，可以将自身暴露，而不是暴露自身的一部分；
-```
-
-```js
-	 //./model/db.js中
-     var setting = require(../setting.js);
-     //引入配置文件；
-	 var MongoClient = require("mongodb").MongoClient;
-
-	 function _connectDB(callback){
-	     var url = seeting.dburl;
-
-	     MongoClient.connect(url,function(err,db){
-	         if(err){
-	             callback(err,null); 
-	             return;
-	         }
-	         callback(null,db); 
-	     })
-	 }
-
-```
-   
