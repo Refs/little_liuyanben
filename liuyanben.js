@@ -12,6 +12,17 @@ app.get("/",function(req,res){
     res.render("index")    
 })
 
+// ajax请求的路由
+app.get("/du",function(req,res){
+    db.find("liuyan",{},function(err,result){
+        if(err){
+            res.json(-1);
+            return;
+        }
+        res.json({"result":result});
+    })
+})
+
 //接收并处理留言，接收的是post请求，node在处理post请求时，运用的是formidable插件
 app.post("/tijiao",function(req,res){
     var form = new formidable.IncomingForm();

@@ -127,16 +127,156 @@ $("#tijiao").click(function(){
 
 ### v4.0 利用ajax结合前端模板显示留言列表；
 
-* 在页面html内容下面追加前端模板
+* 在页面html内容下面追加前端模板文件，并引入underscore引擎；
 
 ```html
-   <script type="text/template">
+    <div class="container">
+        <div id="quanbuliuyan">
+        </div>
+    </div>
+   <script type="text/template" id="moban">
         <div class="list-group">
           <a href="#" class="list-group-item active">
-            <h4 class="list-group-item-heading">List group item heading</h4>
-            <p class="list-group-item-text">...</p>
+            <h4 class="list-group-item-heading"><%=xingming%></h4>
+            <p class="list-group-item-text"><%=liuyan%></p>
           </a>
         </div>
     </script>
-    <script src="js/jquery-1.11.3.min.js"></script>
+    <script src="/js/underscore.js"></script>
+
+```
+* 在页面载入后，利用ajax发送get请求，将请求返回的数据，利用underscore添加到前端模板文件中；并将加过数据的html语句，利用$()，转化为元素，追加到页面元素中；
+
+
+```js
+    //放在页面尾部，页面加载完毕后，自动执行语句；
+    <script type="text/javascript">
+        $.get("/du",function(result){
+            var json = JSON.parse(result);
+
+            for (var i=0; i<json.result.length; i++){
+                 //将返回的数据，利用underscore插入到模板之中；成为html语句，并将语句追加到页面中；
+                var compiled = _.template($("#moban").html());
+                var html= compiled({"xingming":json.result[i].xingming,"liuyan":json.result[i].liuyan});
+                $("#quanbuliuyan").append($(html));
+            }
+            
+        })
+    </script>
+```
+
+```js
+    //服务端接收到，ajax的请求之后
+    app.get("/du",function(req,res){
+        db.find("liuyan",{},function(err,result){
+            if(err){
+                res.json(-1);
+                return;
+            }
+            res.json({"result":result});
+        })
+    })
+
+```
+
+> ajax在请求的时候，后台只需要提供json,而前台将json数据，解析出来就可以了；**前后端的json交互** 
+
+* 处理模板冲突：在ejs页面中，如果我们想使用underscore的模板，就会有模板冲突的问题，因为underscore与ejs一样使用的都是ERB式的分隔符（<% %>）,ejs会认为underscore模板是自己的模板，在渲染的时候就会报错，(不但模板会报错，页面中的任何地方，即使是注释，只要里面有<%%>都会报错)，如下：
+
+```js
+    <script type="text/template" id="moban">
+        <div class="list-group">
+            <a href="#" class="list-group-item active">
+                <h4 class="list-group-item-heading"><%= xingming %></h4>
+    
+                <p class="list-group-item-text"><%= liuyan %></p>
+            </a>
+        </div>
+    </script>
+    //ejs以为上面underscore模板是自己的模板。所以报错，提示你没有传入xingming参数。
+    /*
+    ReferenceError: E:\repository\little_liuyan\views\index.ejs:85
+        83|         <div class="list-group"> 
+        84|           <a href="#" class="list-group-item active"> 
+        >> 85|             <h4 class="list-group-item-heading"><%=xingming%></h4> 
+        86|             <p class="list-group-item-text"><%=liuyan%></p> 
+        87|           </a> 
+        88|         </div> 
+
+        xingming is not defined
+    */
+```
+
+* 可以通过改变underscore.js的ERB分隔符样式，来解决冲突；
+
+> 引自underscore源码：如果ERB式的分隔符您不喜欢, 您可以改变Underscore的模板设置, 使用别的符号来嵌入代码.定义一个 interpolate 正则表达式来逐字匹配嵌入代码的语句, 如果想插入转义后的HTML代码则需要定义一个 escape 正则表达式来匹配,还有一个 evaluate 正则表达式来匹配您想要直接一次性执行程序而不需要任何返回值的语句.您可以定义或省略这三个的任意一个.
+
+```js
+    //源码中：
+    _.templateSettings = {
+        evaluate    : /<%([\s\S]+?)%>/g,
+        interpolate : /<%=([\s\S]+?)%>/g,
+        escape      : /<%-([\s\S]+?)%>/g
+    };
+```
+
+```js
+    //源码中给我的替换示例
+    _.templateSettings = {
+        interpolate : /\{\{(.+?)\}\}/g
+    };
+
+    var template = _.template("Hello {{ name }}!");
+    template({name: "Mustache"});
+    => "Hello Mustache!"
+```
+
+```js
+    //自己改正的最终结果
+     _.templateSettings = {
+        evaluate    : /\{\{([\s\S]+?)\}\}/g,
+        interpolate : /\{\{=([\s\S]+?)\}\}/g,
+        escape      : /\{\{-([\s\S]+?)\}\}/g
+    };
+    //和官方的例子基本上保持一致；
+```
+
+* 将underscore模板，用新的分隔符，重新修改一下；
+
+```js
+    <script type="text/template" id="moban">
+        <div class="list-group">
+            <a href="#" class="list-group-item active">
+                <h4 class="list-group-item-heading">{{=xingming}}</h4>
+    
+                <p class="list-group-item-text">{{=liuyan}}</p>
+            </a>
+        </div>
+    </script>
+```
+
+* 纠正在使用JSON.parse时的一个错误；
+
+```js
+    <script type="text/javascript">
+        $.get("/du",function(result){
+            //var json = JSON.parse(result);
+
+/**
+1.JSON.parse()是用于解析类似'{"name":"xiaoming","age":"12"}'的字符串，而在本式子中，result捕捉到的是服务器返回的json,用JSON.parse()解析一个json格式的数据就会报错；SyntaxError: JSON.parse: unexpected character at line 1 column 2 of the JSON data
+2.除不能解析json数据，其对要解析字符串的格式也是有要求的 :
+    key值没有被双引号括起来的字符串（普通对象写法）'{name:"xiaoming",age:"12"}' 不能被解析；
+    双引号括弧括住单引号key值的字符串也不能被解析 "{'name':'xiaoming','age':'12'}"
+3.此处由于result捕捉的本身就是一个json，所以就不用解析了，在服务器返回之前，其已经将数据处理成json了，而ajax所请求的就是一个json; 即将数据解析成json是服务端的事情，不是前台ajax的事情；这一点分工一定要明确；
+**/
+
+            for (var i=0; i<result.result.length; i++){
+                 //将返回的数据，利用underscore插入到模板之中；成为html语句，并将语句追加到页面中；
+                var compiled = _.template($("#moban").html());
+                var html= compiled({"xingming":result.result[i].xingming,"liuyan":result.result[i].liuyan});
+                $("#quanbuliuyan").append($(html));
+            }
+            
+        })
+    </script>
 ```

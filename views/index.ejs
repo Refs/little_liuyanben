@@ -73,13 +73,17 @@
           </div>
         </div>
 
+        <div id="quanbuliuyan">
+        
+        </div>
+
     </div> 
 
-    <script type="text/template">
+    <script type="text/template" id="moban">
         <div class="list-group">
           <a href="#" class="list-group-item active">
-            <h4 class="list-group-item-heading"><%=xingming%></h4>
-            <p class="list-group-item-text"><%=liuyan%></p>
+            <h4 class="list-group-item-heading">{{=xingming}}</h4>
+            <p class="list-group-item-text">{{=liuyan}}</p>
           </a>
         </div>
     </script>
@@ -89,16 +93,44 @@
     <!--此处利用ctrl + shift + H, 引入地址时，一定要叫上后缀，否则浏览器请求不到-->
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/underscore.js"></script>
     <script type="text/JavaScript">
-      // var oBtn = document.getElementById("tijiao");
-      // oBtn.onclick = function(){
-      //   alert("123");
-      // } 
+    
+
+
+      // ajax请求数据：
+     $.get("/du", function(result){
+          //服务器响应的result形式，应该是{"result":[{"xingming":"","liuyan":""},{"xingming":"","liuyan":""}]}的形式；
+          //result返回的是一个查询结果
+          
+          //将服务器返回的数据，解析成json;
+         
+          //填充模板，直接从underscore文档里面复制
+          // var compiled = _.template("hello: {{= name }}");
+          // compiled({name: 'moe'});
+          for (var i=0; i < result.result.length;  i++){
+                var compiled = _.template($("#moban").html());
+                // 用到了jquery.html() - 设置或返回所选元素的内容（包括 HTML 标记）
+                var html = compiled({"xingming":result.result[i].xingming,"liuyan":result.result[i].liuyan});
+                //返回的是一个html字符串语句，类似 "<b>&lt;script&gt;</b>"，将这个语句放到html变量里
+                $("#quanbuliuyan").append($(html));
+                //这句话的逻辑，是以jquery方法创建元素，然后利用append方法来向#quanbuliuyan插入元素； 
+                
+                // 以$来创建元素，参见jquery文档，创建元素的3种方法
+                // var txt1="<p>Text.</p>";               // 以 HTML 创建新元素
+                // var txt2=$("<p></p>").text("Text.");   // 以 jQuery 创建新元素
+                // var txt3=document.createElement("p");  // 以 DOM 创建新元素
+          }
+       
+        });  //方法是直接从api粘贴过来的
+
+/** 
       $("#tijiao").click(function(){
-          // 用户再一次点击时，让两个提示框都消失：
+
           $("#success").hide();
           $("#failed").hide();
-
+        
+        //ajax提交表单
         $.post("/tijiao",{"name":$("#xingming").val(),"liuyan":$("#liuyan").val()},function(result){
           //  利用ajax去发送请求，服务器的相应会被回调函数的result参数捕获到，此处不用解析，可以直接打点调用返回对象的属性，因为jquery已经帮我们解析好了；
           if(result.result == -1){
@@ -108,6 +140,7 @@
           }
         })
       })
+**/
     </script>
   
   </body>
