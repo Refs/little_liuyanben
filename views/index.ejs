@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-cn">
   <head>
@@ -15,6 +16,11 @@
       <script src="http://cdn.bootcss.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="http://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+    <style type="text/css">
+      #success,#failed{
+        display:none;
+      }
+    </style>
     
   </head>
   <body>
@@ -55,7 +61,29 @@
 
       </form>
       </div>
+
+        <div class="row" id="success"> 
+          <div class="alert alert-success col-md-6" role="alert" >
+            <a href="#" class="alert-link">相应成功</a>
+          </div>
+        </div>
+        <div class="row" id="failed">
+          <div class="alert alert-danger col-md-6" role="alert">
+            <a href="#" class="alert-link">相应错误</a>
+          </div>
+        </div>
+
     </div> 
+
+    <script type="text/template">
+        <div class="list-group">
+          <a href="#" class="list-group-item active">
+            <h4 class="list-group-item-heading"><%=xingming%></h4>
+            <p class="list-group-item-text"><%=liuyan%></p>
+          </a>
+        </div>
+    </script>
+
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="/js/jquery-3.1.1.js"></script>
     <!--此处利用ctrl + shift + H, 引入地址时，一定要叫上后缀，否则浏览器请求不到-->
@@ -67,8 +95,17 @@
       //   alert("123");
       // } 
       $("#tijiao").click(function(){
-        $.post("/tijiao",{"name":$("#xingming").val(),"liuyan":$("#liuyan").val()},function(result){
+          // 用户再一次点击时，让两个提示框都消失：
+          $("#success").hide();
+          $("#failed").hide();
 
+        $.post("/tijiao",{"name":$("#xingming").val(),"liuyan":$("#liuyan").val()},function(result){
+          //  利用ajax去发送请求，服务器的相应会被回调函数的result参数捕获到，此处不用解析，可以直接打点调用返回对象的属性，因为jquery已经帮我们解析好了；
+          if(result.result == -1){
+              $("failed").fadeIn();
+          }else if(result.result == 1 ){
+              $("#success").fadeIn();
+          }
         })
       })
     </script>
