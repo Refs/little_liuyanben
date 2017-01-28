@@ -123,11 +123,13 @@ exports.find = function(collectionName,json,C,D){
         var callback = C;
         var pageamount = 0;
         var skipNumber = 0;
+        var sort = {};
     }else if(arguments.length == 4){
         var args = C;
         var callback = D;
-        var pageamount = parseInt(args.pageamount);
-        var skipNumber = parseInt(args.page*args.pageamount);
+        var pageamount = parseInt(args.pageamount) || 0;
+        var skipNumber = parseInt(args.page*args.pageamount) || 0;
+        var sort = args.sort || {};
     }else{
         throw new Error("find函数的参数个数，必须是3个，或者4个。");
         return;
@@ -138,11 +140,10 @@ exports.find = function(collectionName,json,C,D){
             db.close();//上传错误后，也应将数据库关闭；
             return;
         }
-        
+     
         var result = [];
 
-
-        var cursor = db.collection(collectionName).find(json).limit(pageamount).skip(skipNumber);
+        var cursor = db.collection(collectionName).find(json).limit(pageamount).skip(skipNumber).sort(sort);
         cursor.each(function(err,doc){
             if(err){
                 callback(err,null);

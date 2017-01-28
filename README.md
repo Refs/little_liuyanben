@@ -66,6 +66,8 @@
 
 ### v3.0 处理表单 通过ajax提交的post请求；
 
+![](http://baihua.xicp.cn/17-1-26/10754556-file_1485391869651_108a7.gif)
+
 * node 在处理一般都是利用formidable 插件来处理 **post** 的请求，首先第一步应安装formidable包；
 
 * 利用formidable 来接收post过来的数据,表单项放在文本域`fields`中,文件项放在文件域 `files`中；
@@ -125,14 +127,20 @@ $("#tijiao").click(function(){
 })
 ```
 
-### v4.0 利用ajax结合前端模板显示留言列表；
+### v4.0 利用ajax结合前端模板在页面初次载入的时候显示留言列表；
+
+![页面加载时利用ajax去get数据](http://baihua.xicp.cn/17-1-26/12727759-file_1485391430734_9ac9.gif)
 
 * 在页面html内容下面追加前端模板文件，并引入underscore引擎；
 
 ```html
+    填充过的模板，就放在#quanbujiedian中，
     <div class="container">
-        <div id="quanbuliuyan">
+        <div class="row"> //利用row清除上下浮动；
+            <div class="col-md-1"></div> //用一个空盒子，将下面的盒子向右挤一下；
+            <div id="quanbuliuyan" class="col-md-5">
         </div>
+    </div>
     </div>
    <script type="text/template" id="moban">
         <div class="list-group">
@@ -269,14 +277,123 @@ $("#tijiao").click(function(){
     双引号括弧括住单引号key值的字符串也不能被解析 "{'name':'xiaoming','age':'12'}"
 3.此处由于result捕捉的本身就是一个json，所以就不用解析了，在服务器返回之前，其已经将数据处理成json了，而ajax所请求的就是一个json; 即将数据解析成json是服务端的事情，不是前台ajax的事情；这一点分工一定要明确；
 **/
+            //得到模板，能成模板函数，这一步没必要放到，循环语句中；
+            var compiled = _.template($("#moban").html());
 
             for (var i=0; i<result.result.length; i++){
-                 //将返回的数据，利用underscore插入到模板之中；成为html语句，并将语句追加到页面中；
-                var compiled = _.template($("#moban").html());
+                 //填充模板，数据绑定
                 var html= compiled({"xingming":result.result[i].xingming,"liuyan":result.result[i].liuyan});
+                //DOM操作，追加子节点；
                 $("#quanbuliuyan").append($(html));
             }
             
         })
     </script>
 ```
+### v5.0 改善提交表单时的用户体验；
+
+* 体验改善1---假盒子；将表单数据提交成功后，不能在页面中直接显示提交的数据，而要通过刷新页面（通过$.get("/du",function(result){})），才能将表单数据显示；这样用户体验不好；
+
+```js
+ $("#tijiao").click(function(){
+
+    $("#success").hide();
+    $("#failed").hide();
+    $.post("/tijiao",{"name":$("#xingming").val(),"liuyan":$("#liuyan").val()},function(result){
+        
+        if(result.result == -1){
+            $("failed").fadeIn();
+        }else if(result.result == 1 ){
+            //当服务器返回“1”时，表单中的数据是真的提交成功了，但是当前页面无法显示，只有通过刷新页面，才能通过ajax从 “/du”页面中得到新的，，所以此处我们先通过，一个假盒子凑出来；
+            $("#success").fadeIn();
+
+            var compiled = _.template($("#moban").html());
+            var html = compiled({liuyan:$("#liuyan").val(),xingming:$("#xingming").val()})
+            //这所以说这个盒子是“假”盒子，原因就在于此处模板中填充的数据，并非是“真”的从数据库中请求到的，而是在用户刚填的表单中读取出来的；
+            $(html).insertBefore($("#quanbuliuyan"));
+            //将假盒子插到，quanbuliuyanhezi这个整体盒子上面；这样在表单提交，服务器返回1之后，就会将假盒子插入到 quanbuliuyan盒子上面；
+        }
+    })
+ })
+```
+**学习有时候就是个体力活，有些知识点，并不需要太多脑力，迷迷糊糊的状态下也能将其攻克，所以没有必要等到自己有精神了，脑袋清醒了，再去做某些事情，你去等精神，时间不会去等你**
+
+
+* 体验改善2，利用假盒子，表单提交后会将假盒子插到全部盒子的上面，但刷新页面之后，假盒子对应的留言，就会跑到最后一个，这是因为我们的数据是倒着排序的，最后一个进入的，最后一个被请求，然后就会最后一个被渲染；
+
+> 解决办法时，每当一个数据存储时，给其加上一个时间fields，记录其被添加到数据库的时间，最后让数据库依据时间进行排序； 
+
+```js 
+    //liuyanben.js app.post("tijiao",function(){})中；
+ db.insertOne("liuyan",{"xingming":fields.name,"liuyan":fields.liuyan,"shijian":new Date()}
+    //数据入库时，加上时间戳
+```
+
+> 同时修改前端模板
+
+```js
+<script type="text/template" id="moban">
+      <div class="liuyankuai">
+        <p>【姓名】：{{=xingming}}</p>
+        <p>【留言】：{{=liuyan}}</p>
+        <p>【时间】：{{=shijian}}</p>
+      </div>
+</script>
+//同时填充实践模板时，要加入时间变量；假盒子中 shijian : new Date();
+```
+
+> 重新修改db.js中的查询函数，让其依据shijian,以倒序进行检索；
+
+```js
+  var cursor = db.collection(collectionName).find(json).limit(pageamount).skip(skipNumber).sort({"shijian":-1});
+  //这样做虽然可以成功，但不符合MVC的规范，因为我们改了DAO层，这个sort与pageamount和skipNumber一样也是一个配置， 可以将sort与pageamount与skip一样，作为接口向外面暴露（暴露到参数中）；正确的修改方式，不是在函数体中，直接加入一个具体的数据，而是将其设为一个变量，作为接口参数，向外暴露；具体的数据有外部调用的函数传入，而自己只负责数据接收（承接）与内部逻辑；暴露的过程可以参照pageamount和skipNumber的暴露过程（V1.0中），下面是暴露的结果：
+  ```
+
+```js
+//接口C就是一个配置json,配置的接口都放在这个json对象中；
+exports.find = function(collectionName,json,C,D){
+    if(arguments.length == 3){
+        var callback = C;
+        var pageamount = 0;
+        var skipNumber = 0;
+        var sort = {};
+    }else if(arguments.length == 4){
+        var args = C;
+        var callback = D;
+        var pageamount = parseInt(args.pageamount) || 0;
+        var skipNumber = parseInt(args.page*args.pageamount) || 0;
+        var sort = args.sort || {};
+    }else{
+        throw new Error("find函数的参数个数，必须是3个，或者4个。");
+        return;
+    }
+    _connectDB(function(err,db){
+        if (err){
+            callback(err,null);
+            db.close();//上传错误后，也应将数据库关闭；
+            return;
+        }
+     
+        var result = [];
+
+        var cursor = db.collection(collectionName).find(json).limit(pageamount).skip(skipNumber).sort(sort);
+        cursor.each(function(err,doc){
+            if(err){
+                callback(err,null);
+                db.close();
+                return;
+            }
+            if(doc != null){
+                result.push(doc);
+            }else{
+                callback(null,result);
+                db.close();
+            }
+
+        })
+    })
+}
+//外部函数调用时：参数C中传入配置sort;
+// db.find("liuyan",{},{"sort":{"shijian":-1}},function(err,result){});
+```
+> db.find函数中，配置json的接口暴露，以及函数的重载，是理解函数的关键；这是一个关键点，弄清了，就会距离高手更近一步；

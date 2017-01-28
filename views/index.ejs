@@ -20,6 +20,10 @@
       #success,#failed{
         display:none;
       }
+      .liuyankuai{
+        padding:10px 0;
+        border-bottom:1px solid gray;
+      }
     </style>
     
   </head>
@@ -73,19 +77,16 @@
           </div>
         </div>
 
-        <div id="quanbuliuyan">
-        
-        </div>
-
-    </div> 
+ 
+         <div id="quanbuliuyan" ></div>
+    </div>
 
     <script type="text/template" id="moban">
-        <div class="list-group">
-          <a href="#" class="list-group-item active">
-            <h4 class="list-group-item-heading">{{=xingming}}</h4>
-            <p class="list-group-item-text">{{=liuyan}}</p>
-          </a>
-        </div>
+      <div class="liuyankuai">
+        <p>【姓名】：{{=xingming}}</p>
+        <p>【留言】：{{=liuyan}}</p>
+        <p>【时间】：{{=shijian}}</p>
+      </div>
     </script>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
@@ -108,11 +109,13 @@
           //填充模板，直接从underscore文档里面复制
           // var compiled = _.template("hello: {{= name }}");
           // compiled({name: 'moe'});
+
+          //得到模板，能成模板函数，这一步没必要放到，循环语句中；
+          var compiled = _.template($("#moban").html());
           for (var i=0; i < result.result.length;  i++){
-                var compiled = _.template($("#moban").html());
-                // 用到了jquery.html() - 设置或返回所选元素的内容（包括 HTML 标记）
-                var html = compiled({"xingming":result.result[i].xingming,"liuyan":result.result[i].liuyan});
-                //返回的是一个html字符串语句，类似 "<b>&lt;script&gt;</b>"，将这个语句放到html变量里
+                // 填充模板，用到了jquery.html() - 设置或返回所选元素的内容（包括 HTML 标记）
+                var html = compiled({"xingming":result.result[i].xingming,"liuyan":result.result[i].liuyan,shijian:result.result[i].shijian});
+                //DOM操作追加节点，返回的是一个html字符串语句，类似 "<b>&lt;script&gt;</b>"，将这个语句放到html变量里
                 $("#quanbuliuyan").append($(html));
                 //这句话的逻辑，是以jquery方法创建元素，然后利用append方法来向#quanbuliuyan插入元素； 
                 
@@ -124,7 +127,7 @@
        
         });  //方法是直接从api粘贴过来的
 
-/** 
+
       $("#tijiao").click(function(){
 
           $("#success").hide();
@@ -137,10 +140,13 @@
               $("failed").fadeIn();
           }else if(result.result == 1 ){
               $("#success").fadeIn();
+              var compiled = _.template($("#moban").html());
+              var html = compiled({xingming:$("#xingming").val(),liuyan:$("#liuyan").val(),shijian:new Date()});
+              $(html).insertBefore($("#quanbuliuyan"));
           }
         })
       })
-**/
+
     </script>
   
   </body>

@@ -14,8 +14,9 @@ app.get("/",function(req,res){
 
 // ajax请求的路由
 app.get("/du",function(req,res){
-    db.find("liuyan",{},function(err,result){
+    db.find("liuyan",{},{"sort":{"shijian":-1}},function(err,result){
         if(err){
+            console.log(err);
             res.json(-1);
             return;
         }
@@ -28,7 +29,7 @@ app.post("/tijiao",function(req,res){
     var form = new formidable.IncomingForm();
  
     form.parse(req, function(err, fields, files) {
-      db.insertOne("liuyan",{"xingming":fields.name,"liuyan":fields.liuyan},function(err,result){
+      db.insertOne("liuyan",{"xingming":fields.name,"liuyan":fields.liuyan,"shijian":new Date()},function(err,result){
           if(err){
               res.json({"result":-1});//此处返回的"-1"是给ajax看的；
           }
@@ -38,5 +39,14 @@ app.post("/tijiao",function(req,res){
 
 })
 
+app.get("/shanchu",function(req,res){
+    db.deleteMany("liuyan",{},function(err,result){
+        if(err){
+            res.send(err);
+            return;
+        }
+        res.send(result);
+    })
+})
 
 app.listen(3000);
