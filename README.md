@@ -1,5 +1,9 @@
 # Update Log
 
+git版本库在实际学习中的最强应用：每个版本就像游戏中的一个存档点，那一部分内容比较生疏，就直接读档到那个位置，将关卡再过一遍就是了；如**v3.0 处理表单 通过ajax提交的post请求；**这个档位，若自己感觉生疏，完全可以读这个档，**还原当时的作业环境**（省去模拟某个知识点环境的时间与功夫）将自己要走的，重新走一遍；这就等于找到了一个模拟器，让你可以不停的练习哪几招：qaqaqerawa!  下面所写的是每一个关卡的攻略；  学习了git这个应用，自己话那么多时间学习，也值了；这样用起来很舒服；---------此关系重大；
+
+跟着老师做的每一个项目都像是一个游戏，平时自己想玩这个游戏的哪一部分，就去玩这一部分，git可以去读档，readme中有游戏攻略；
+
 ### V1.0 mongodb数据库 DAO层函数的封装
 主要涉及三个文件：
 
@@ -397,3 +401,240 @@ exports.find = function(collectionName,json,C,D){
 // db.find("liuyan",{},{"sort":{"shijian":-1}},function(err,result){});
 ```
 > db.find函数中，配置json的接口暴露，以及函数的重载，是理解函数的关键；这是一个关键点，弄清了，就会距离高手更近一步；
+
+### v6.0 分页
+
+* 将数据库的检索结果进行分页，mongo的DAO层的函数中db.find()函数中有能接收**外部传入分页配置**的接口参数；通过配置，即可以对检索的结果进行分页；
+
+> 我们很难改变数据库内的存放方式，但我们可以通过一些列的配置，可以很容易的改变数据库的检索方式；
+
+```js
+//前台的接口是请求 /du?page=0的时候返回前三条数据，/du?page=1的时候向后返回3条数据，前面的接口写好了，后面就是前端配合后端了；
+app.get("/du",function(req,res){
+    var page = req.query.page;//接收网页查询参数；
+    var pageamount = 3;
+    db.find("liuyan",{},{"page":page,"pageamount":pageamount",sort":{"shijian":-1}},function(err,result){
+        if(err){
+            console.log(err);
+            res.json(-1);
+            return;
+        }
+        res.json({"result":result});
+    })
+})
+```
+* 前台页面中增加bootstrap分页条；
+```
+<nav>
+    <ul class="pagination">
+    <li><a href="#">&laquo;</a></li>
+    <li><a href="#">1</a></li>
+    <li><a href="#">2</a></li>
+    <li><a href="#">3</a></li>
+    <li><a href="#">4</a></li>
+    <li><a href="#">5</a></li>
+    <li><a href="#">&raquo;</a></li>
+    </ul>
+</nav>
+```
+* 利用ajax实现局部刷新：当分页按钮切换时，浏览器的地址栏是不变的，真的造成网页中的某一部分局部刷新，
+
+* 给分页中每一个li都添加监听
+    
+```js
+    //index.ejs
+    //1.为需要监听的页码按钮都增加一个类：yemaanniu
+    //2.为要监听的每一个li都增加一个属性data-page
+
+   
+    <nav>
+        <ul class="pagination">
+        <li><a href="#">&laquo;</a></li>
+        <li data-page="1" class="yemaanniu active"><a href="#">1</a></li>
+        <li data-page="2" class="yemaanniu"><a href="#">2</a></li>
+        <li data-page="3" class="yemaanniu"><a href="#">3</a></li>
+        <li data-page="4" class="yemaanniu"><a href="#">4</a></li>
+        <li data-page="5" class="yemaanniu"><a href="#">5</a></li>
+        <li><a href="#">&raquo;</a></li>
+        </ul>
+    </nav>
+```
+
+```js
+     //2.为所有类名为yemaanniu的按钮增加一个监听:
+    $(".yemaanniu").click(function(){
+        //3.按钮点击时重新发起请求；即利用ajax重新发送一次get请求，
+        var page = parseInt($(this).attr("data-page"))
+        getdata(page);
+        //5.参数page的设定，在上面的html中为每一个要监听的li都增加一个属性data-page,函数getdata调用时，参数page就为当前事件对象li的内部属性data-page的值，即var page = parseInt($(this).attr("data-page"))
+        //此时在页面上点击分页按钮，就可以请求分页对应的数据，underscore渲染之后，层层插入到#quanbuliuyan节点里面；因为点击第二页的时候，第一页的数据还没有被清除；
+
+        //8.控制li上的class="active",基本思路时为当前点击的事件对象添加class="active",同时将自己兄弟节点的class="active"删除；
+        $(this).addClass("active").siblines().removeClass("active");
+    })
+
+    //4.将页面初载时发送**get请求的ajax函数**封装为 getdata函数，函数向外暴露一个参数，用来接收传入的分页page,内部逻辑时当传入page为1时，就发送"/du?page=1"
+
+    getdata(0); //页面初次载入的时候，请求"/du?page=0"的数据；
+    function getdata(page){ 
+     //$.get("/du", function(result){-->
+
+     //7.调整前端页码与后端数据库页码之间的对应，前端的page=1实际上请求的是后台page=0的数据；后台真实的page是从0开始算的；
+     //$.get("/du?page="+page, function(result){
+     $.get("/du?page="+(page-1), function(result){
+         //6.清空#quanbuliuyan节点中的子节点
+         $("#quanbuliuyan").html("");
+
+          var compiled = _.template($("#moban").html());
+          for (var i=0; i < result.result.length;  i++){
+                var html = compiled({"xingming":result.result[i].xingming,"liuyan":result.result[i].liuyan,shijian:result.result[i].shijian});
+               
+                $("#quanbuliuyan").append($(html));
+          }
+        }); 
+    }
+
+      $("#tijiao").click(function(){
+
+          $("#success").hide();
+          $("#failed").hide();
+        
+        $.post("/tijiao",{"name":$("#xingming").val(),"liuyan":$("#liuyan").val()},function(result){
+          if(result.result == -1){
+              $("failed").fadeIn();
+          }else if(result.result == 1 ){
+              $("#success").fadeIn();
+              var compiled = _.template($("#moban").html());
+              var html = compiled({xingming:$("#xingming").val(),liuyan:$("#liuyan").val(),shijian:new Date()});
+              $(html).insertBefore($("#quanbuliuyan"));
+          }
+        })
+      })
+
+```
+
+```js
+ //8.分页数的确定，实际上是由集合数据的总条数除去每页分的条数，然后向上取整不够一页也算一页（如每页4条数据，最后的2条也占一页 ）；
+
+ //8.1 在db.js中封装查询数据量的函数 exports.count = function(collectionName,json,callback)
+
+ exports.count = function(collectionName,json,callback){//上级在调动自己做某件事的时候，需要要求上级提供资源或数据，没有这些数据自己没法干活；同时要留有接口，区接收这些数据；如本上级在吩咐的时候，要指明查那个集合，刷选条件，以及结果向哪里放，三个事；
+    _connectDB(function(err,db){
+        if(err){
+            callback(err,null);
+            db.close();
+            return;
+        }
+        db.collection(collectionName).count(json,function(err,count){
+            if(err){
+                callback(err,null);
+                db.close();
+                return
+            }
+            callback(null,count);
+            db.close();
+        })
+    })
+}
+
+ //测试ajax是否正常，只要看其能否正常发送请求，就可以了；
+
+ //8.2上层逻辑 liuyanben.js中
+ app.get("/count",function(req,res){
+    db.count("liuyan",{},function(err,count){//手底下每一个人都有其具体的业务范围，各人有各人的活，安排某人工作之前，必须给谁提供相应的资源，其有这些资源才能干成活，而寻找这些资源不是其的活；如此处安排db.count就得给其提供collectionName json callback参数，没有这些参数他干不成活，而找这些参数，又不是属于其业务范围内的活；
+        if(err){
+            res.send(err);
+            return;
+        }
+        res.send(count.toString());
+    })
+})
+
+
+```
+
+```js
+//8.3 修改后台模板，让其根据 count的值 进行分页数的确定，而不是上来就被定死了；
+
+//改动之前
+     <nav>
+          <ul class="pagination">
+            <li><a href="#">&laquo;</a></li>
+            <li data-page="1" class="yemaanniu active" ><a href="#">1</a></li>
+            <li data-page="2" class="yemaanniu"><a href="#">2</a></li>
+            <li data-page="3" class="yemaanniu"><a href="#">3</a></li>
+            <li data-page="4" class="yemaanniu"><a href="#">4</a></li>
+            <li data-page="5" class="yemaanniu"><a href="#">5</a></li>
+            <li><a href="#">&raquo;</a></li>
+          </ul>
+        </nav>
+
+//改动之后
+    <nav>
+          <ul class="pagination">
+            <li><a href="#">&laquo;</a></li>
+            <% for (var i=1; i<pageamount; i++){  %>
+            
+            <li data-page="<%=i%>" class="yemaanniu active" ><a href="#"><%=i%></a></li>
+           
+            <% } %>
+            <li><a href="#">&raquo;</a></li>
+          </ul>
+        </nav>
+
+//完整逻辑
+
+    app.get("/",function(req,res){
+        db.count("liuyan",{},function(err,count){
+            var pageamount =  Math.ceil(count/4);//Math.ceil向上取整；Math.floor()向下取整；
+            res.render("index",{"pageamount":pageamount})
+        })
+        
+    })
+//8.4 在前台补充补充按钮的active，li是后台ejs渲染出来的，渲染时都没有active; 
+<script type="text/template">
+    $(".yemaanniu:first").addClass("active") //给第一个类名为yemaanniu的li 加上一个active类；
+</script>
+```
+
+```js
+//9.分页上一页与下一页的逻辑
+
+    $(".yemaanniu:first").addClass("active");
+
+    //9.1.维持一个全局变量nowpage
+    var nowpage = 1; //页面初次加载的时候，active 的 page 为 1；
+
+   //3.为上一页下一页按钮增加监听；<li class="next-btn"><a href="#">&raquo;</a></li>
+    $(".next-btn").click(function(){
+        nowpage++;
+        getdate(nowpage);//点击上将nowpage加1，并请求后台数据；
+       // $("[data-page=nowpage]").addClass("active").siblines().removeClass("active");不对；
+    })
+    //此时还有两个业务没有完成：一个是点击下一页时active在按钮间的移动，二是当到达最后一页时，就不让它继续向下请求了；  angular.js关于分页有封装好的插件；
+
+    $(".yemaanniu").click(function(){
+      var page = parseInt($(this).attr("data-page"));
+      //2.碰到那个页码按钮之后，就让我们的全局变量now等于谁的page；页面初次加载是nowpage为1，见上一步；
+      var nowpage = page;
+
+      getdate(page);
+      $(this).addClass("active").siblings().removeClass("active");
+    })
+
+    getdate(1);
+
+    function getdate(page){
+      // ajax请求数据：
+        $.get("/du?page="+(page-1), function(result){
+
+          $("#quanbuliuyan").html("");
+          var compiled = _.template($("#moban").html());
+          for (var i=0; i < result.result.length;  i++){
+                var html = compiled({"xingming":result.result[i].xingming,"liuyan":result.result[i].liuyan,shijian:result.result[i].shijian});
+          
+                $("#quanbuliuyan").append($(html));
+          }
+        });  
+    }
+```

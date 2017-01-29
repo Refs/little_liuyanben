@@ -9,12 +9,21 @@ app.use(express.static("./public"));
 
 //显示留言form
 app.get("/",function(req,res){
-    res.render("index")    
+    db.count("liuyan",{},function(err,count){
+        if(err){
+            res.send(err);
+            return;
+        }
+        var pageamount = Math.ceil(count/4);
+        res.render("index",{"pageamount":pageamount})
+    })    
 })
 
 // ajax请求的路由
 app.get("/du",function(req,res){
-    db.find("liuyan",{},{"sort":{"shijian":-1}},function(err,result){
+    var page = req.query.page;
+    pageamount = 3;
+    db.find("liuyan",{},{"sort":{"shijian":-1},"page":page,"pageamount":pageamount},function(err,result){
         if(err){
             console.log(err);
             res.json(-1);
@@ -46,6 +55,16 @@ app.get("/shanchu",function(req,res){
             return;
         }
         res.send(result);
+    })
+})
+
+app.get("/count",function(req,res){
+    db.count("liuyan",{},function(err,count){
+        if(err){
+            res.send(err);
+            return;
+        }
+        res.send(count.toString());
     })
 })
 

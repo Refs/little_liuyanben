@@ -132,7 +132,7 @@ exports.find = function(collectionName,json,C,D){
         var sort = args.sort || {};
     }else{
         throw new Error("find函数的参数个数，必须是3个，或者4个。");
-        return;
+        
     }
     _connectDB(function(err,db){
         if (err){
@@ -199,6 +199,26 @@ exports.updateMany = function(collectionName,json1,json2,callback){
                 return;
             }
             callback(null,result);
+            db.close();
+        })
+    })
+}
+
+//得到集合中document的总数量
+exports.count = function(collectionName,json,callback){//上级在调动自己做某件事的时候，需要要求上级提供资源或数据，没有这些数据自己没法干活；同时要留有接口，区接收这些数据；如本上级在吩咐的时候，要指明查那个集合，刷选条件，以及结果向哪里放，三个事；
+    _connectDB(function(err,db){
+        if(err){
+            callback(err,null);
+            db.close();
+            return;
+        }
+        db.collection(collectionName).count(json,function(err,count){
+            if(err){
+                callback(err,null);
+                db.close();
+                return
+            }
+            callback(null,count);
             db.close();
         })
     })

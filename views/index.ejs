@@ -77,7 +77,23 @@
           </div>
         </div>
 
- 
+        <nav>
+          <ul class="pagination">
+            <li><a href="#">&laquo;</a></li>
+            <!--<li data-page="1" class="yemaanniu active" ><a href="#">1</a></li>-->
+            <!--<li data-page="2" class="yemaanniu"><a href="#">2</a></li>-->
+            <!--<li data-page="3" class="yemaanniu"><a href="#">3</a></li>-->
+            <!--<li data-page="4" class="yemaanniu"><a href="#">4</a></li>-->
+            <!--<li data-page="5" class="yemaanniu"><a href="#">5</a></li>-->
+            <% for (var i=1; i<=pageamount; i++){ %>
+
+              <li data-page="<%=i%>" class="yemaanniu"><a href="#"><%=i%></a></li>
+            
+            <% } %>
+            <li class="next-btn"><a href="#">&raquo;</a></li>
+          </ul>
+        </nav>
+
          <div id="quanbuliuyan" ></div>
     </div>
 
@@ -99,8 +115,33 @@
     
 
 
+    $(".yemaanniu:first").addClass("active");
+
+    //1.维持一个全局变量nowpage
+    var nowpage = 1; //页面初次加载的时候，active 的 page 为 1；
+
+   //3.为上一页下一页按钮增加监听；
+  $(".yemaanniu").click(function(){
+      var page = parseInt($(this).attr("data-page"));
+      //2.碰到那个页码按钮之后，就让我们的全局变量等于谁的page；
+      var nowpage = page;
+
+      getdate(page);
+    $(this).addClass("active").siblings().removeClass("active");
+    })
+
+    getdate(1);
+
+    $(".next-btn").click(function(){
+      nowpage++;
+      getdate(nowpage);
+      //$("[data-page=nowpage]").addClass("active").siblings().removeClass("active");
+    })
+
+
+    function getdate(page){
       // ajax请求数据：
-     $.get("/du", function(result){
+     $.get("/du?page="+(page-1), function(result){
           //服务器响应的result形式，应该是{"result":[{"xingming":"","liuyan":""},{"xingming":"","liuyan":""}]}的形式；
           //result返回的是一个查询结果
           
@@ -111,6 +152,7 @@
           // compiled({name: 'moe'});
 
           //得到模板，能成模板函数，这一步没必要放到，循环语句中；
+          $("#quanbuliuyan").html("");
           var compiled = _.template($("#moban").html());
           for (var i=0; i < result.result.length;  i++){
                 // 填充模板，用到了jquery.html() - 设置或返回所选元素的内容（包括 HTML 标记）
@@ -126,7 +168,7 @@
           }
        
         });  //方法是直接从api粘贴过来的
-
+    }
 
       $("#tijiao").click(function(){
 
