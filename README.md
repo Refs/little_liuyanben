@@ -638,3 +638,48 @@ app.get("/du",function(req,res){
         });  
     }
 ```
+
+### v7.0 实现删除操作
+
+* 前端模板，要有一个接口，可以接受的_id，当模板被渲染时，可以接受数据库中的-id; 数据删除就是根据这个-id来删除的；
+ <p><a href="#" data-id="{{=id}}">删除</a></p>
+
+* undescore在渲染模板时，要将document的_id 传递地前端模板引擎，让其工作；
+
+```js
+    var html = compiled({id=result.result[i]._id}) //这样当模板中<p>被渲染出来时，a链接中就会包含对应document的-id值，当a被点击时，其就会发送请求 请求的query就有这个-id;
+```
+
+* 当用户点击时，前端 通过get的方式发送请求，并将id作为请求参数传递给后台
+
+```js
+<p><a href="/shanchu?id={{=id}}">删除</a></p>
+```
+* 后台要能接受接收，请求中的_id; 
+
+```js
+var id = req.query.id
+```
+* 然后后台调用db.deleteMany,并将id作为过滤条件传入{"_id":id},但这样直接传会造成一个错误；mondodb集合中document的key为-id的value是一个对象 `"_id" : ObjectId("588c1280eca12d1c60e3cd09")`，而此时传入的是一个字符串；刷选不到；需要先将id转化为对象之后再传入；
+
+```js
+var ObjectId = require("mongodb").ObjectId;//用来将一个字符串转成一个ObjectId;
+app.get("/shanchu",function(req,res){
+    var id = req.query.id;
+    db.deleteMany("liuyan",{"_id":ObjectId(id)},function(err,result){
+        if(err){res.send(err);return}
+        res.send("删除成功，请自己返回");
+    })
+})
+```
+* 利用 node 重定向，删除之后重定向回来`res.redirect(path)`
+
+```js
+db.deleteMany("liuyan",{"_id":ObjectId(id)},function(err,result){
+    res.redirect("/");
+})
+```
+
+
+
+> 将前台业务引到一个链接中去，然后后台去迎合这个链接；

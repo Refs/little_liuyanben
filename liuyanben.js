@@ -1,6 +1,7 @@
 var express = require("express");
 var formidable = require("formidable");
 var db = require("./model/db");
+var ObjectId = require("mongodb").ObjectID;
 
 var app = express();
 
@@ -48,13 +49,24 @@ app.post("/tijiao",function(req,res){
 
 })
 
+// app.get("/shanchu",function(req,res){
+//     db.deleteMany("liuyan",{},function(err,result){
+//         if(err){
+//             res.send(err);
+//             return;
+//         }
+//         res.send(result);
+//     })
+// })
+
 app.get("/shanchu",function(req,res){
-    db.deleteMany("liuyan",{},function(err,result){
+    var id = req.query.id;
+    db.deleteMany("liuyan",{"_id":ObjectId(id)},function(err,result){
         if(err){
             res.send(err);
             return;
         }
-        res.send(result);
+        res.redirect("/");
     })
 })
 

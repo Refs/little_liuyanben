@@ -102,6 +102,7 @@
         <p>【姓名】：{{=xingming}}</p>
         <p>【留言】：{{=liuyan}}</p>
         <p>【时间】：{{=shijian}}</p>
+        <p><a href="/shanchu?id={{=id}}" class="shanchu" >删除</a></p>
       </div>
     </script>
 
@@ -156,7 +157,7 @@
           var compiled = _.template($("#moban").html());
           for (var i=0; i < result.result.length;  i++){
                 // 填充模板，用到了jquery.html() - 设置或返回所选元素的内容（包括 HTML 标记）
-                var html = compiled({"xingming":result.result[i].xingming,"liuyan":result.result[i].liuyan,shijian:result.result[i].shijian});
+                var html = compiled({"xingming":result.result[i].xingming,"liuyan":result.result[i].liuyan,shijian:result.result[i].shijian,id:result.result[i]._id});
                 //DOM操作追加节点，返回的是一个html字符串语句，类似 "<b>&lt;script&gt;</b>"，将这个语句放到html变量里
                 $("#quanbuliuyan").append($(html));
                 //这句话的逻辑，是以jquery方法创建元素，然后利用append方法来向#quanbuliuyan插入元素； 
@@ -183,7 +184,7 @@
           }else if(result.result == 1 ){
               $("#success").fadeIn();
               var compiled = _.template($("#moban").html());
-              var html = compiled({xingming:$("#xingming").val(),liuyan:$("#liuyan").val(),shijian:new Date()});
+              var html = compiled({xingming:$("#xingming").val(),liuyan:$("#liuyan").val(),shijian:new Date(),id:123});
               $(html).insertBefore($("#quanbuliuyan"));
           }
         })
