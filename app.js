@@ -3,7 +3,6 @@ var db = require("./model/db")
 
 var app = express();
 
-//增加数据
 app.get("/",function(req,res){
     db.insertOne("student",{"name":"xiaozhou","age":13,"hobby":"sing,sleep"},function(err,result){
         if(err){
@@ -15,7 +14,6 @@ app.get("/",function(req,res){
 })
 
 
-// 查询数据
 app.get("/du",function(req,res){
     // 这个页面接收一个名为page的 页面参数；
     var page = req.query.page;
